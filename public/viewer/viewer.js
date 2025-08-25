@@ -1,7 +1,7 @@
 const socket = io('http://localhost:5000');
 const remoteVid = document.getElementById('remoteVid');
 const pcStateEl = document.getElementById('pcState');
-const logsEl = document.getElementById('logs');
+const fsBtn = document.getElementById('fsBtn');
 
 let pc = null;
 let pendingIce = [];
@@ -24,21 +24,19 @@ function createPC() {
         remoteVid.play().then(() => socket.emit('client-log', { role: 'viewer', msg: 'remoteVid.play() succeeded' })).catch((err) => socket.emit('client-log', { role: 'viewer', msg: 'remoteVid.play() failed: ' + err }));
       }
     }, 100);
-  if (logsEl) logsEl.innerText += `\nontrack received`;
+  // no-op for logs (UI simplified)
   };
 
   pc.onconnectionstatechange = () => {
     console.log('viewer pc connectionState', pc.connectionState);
     socket.emit('client-log', { role: 'viewer', msg: `pc connectionState ${pc.connectionState}` });
   if (pcStateEl) pcStateEl.textContent = pc.connectionState;
-  if (logsEl) logsEl.innerText += `\npc state: ${pc.connectionState}`;
   };
 
   pc.oniceconnectionstatechange = () => {
     console.log('viewer pc iceConnectionState', pc.iceConnectionState);
     socket.emit('client-log', { role: 'viewer', msg: `pc iceConnectionState ${pc.iceConnectionState}` });
   if (pcStateEl) pcStateEl.textContent = pc.iceConnectionState;
-  if (logsEl) logsEl.innerText += `\nice state: ${pc.iceConnectionState}`;
   };
 
   pc.onnegotiationneeded = () => {
@@ -77,3 +75,14 @@ socket.on('ice-candidate', async (data) => {
 
   try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (e) { console.warn('viewer addIceCandidate error', e); }
 });
+
+// fullscreen button
+if (fsBtn) {
+  fsBtn.addEventListener('click', async () => {
+    try {
+  const el = remoteVid;
+  if (el.requestFullscreen) await el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch (e) { console.warn('fullscreen failed', e); }
+  });
+}

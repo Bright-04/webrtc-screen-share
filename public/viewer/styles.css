@@ -9,6 +9,7 @@ body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI"
 .container{max-width:980px;margin:2rem auto;padding:0 1rem}
 .card{background:var(--card);border-radius:12px;padding:1rem;margin-bottom:1rem;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
 .video-wrap{display:flex;justify-content:center;align-items:center;padding:1rem;background:var(--glass);border-radius:8px}
-.logs{color:var(--muted);font-size:.9rem;max-height:120px;overflow:auto}
+.controls{display:flex;justify-content:flex-end}
+.btn{padding:.5rem .8rem;border-radius:8px;border:0;cursor:pointer}
+.btn.primary{background:var(--accent);color:#072029;font-weight:600}
 video{width:100%;height:auto;max-height:640px;border-radius:8px;background:#000}
-.footer{text-align:center;color:var(--muted);padding:1rem 0}
