@@ -1,4 +1,9 @@
-const socket = io('http://localhost:5000');
+// signaling server: use ?signal=<url> to override (e.g. ?signal=https://abcd1234.ngrok.io)
+const _signalParam = new URLSearchParams(window.location.search).get('signal');
+const _defaultSignal = `${location.protocol}//${location.hostname}:5000`;
+const _signalUrl = _signalParam || _defaultSignal;
+console.info('viewer signaling url:', _signalUrl);
+const socket = io(_signalUrl);
 const remoteVid = document.getElementById('remoteVid');
 const pcStateEl = document.getElementById('pcState');
 const fsBtn = document.getElementById('fsBtn');
@@ -7,11 +12,14 @@ let pc = null;
 let pendingIce = [];
 const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-function createPC() {
+async function createPC() {
   pc = new RTCPeerConnection(configuration);
 
   pc.onicecandidate = (e) => {
-    if (e.candidate) socket.emit('ice-candidate', { candidate: e.candidate });
+    if (e.candidate) {
+      // can't know admin id here; server will broadcast viewer's ice from viewer to admin(s) when answering
+      socket.emit('ice-candidate', { candidate: e.candidate });
+    }
   };
 
   pc.ontrack = (e) => {
@@ -46,30 +54,35 @@ function createPC() {
 
   // apply any buffered candidates
   if (pendingIce.length) {
-    pendingIce.forEach(async (c) => {
-      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { console.warn('viewer add pending candidate failed', e); }
-    });
+    await Promise.all(pendingIce.map(async (item) => {
+      try { await pc.addIceCandidate(new RTCIceCandidate(item.candidate)); } catch (e) { console.warn('viewer add pending candidate failed', e); }
+    }));
     pendingIce = [];
   }
 
   return pc;
 }
+// register as viewer so admins get notified
+socket.emit('register', { role: 'viewer' });
 
 socket.on('offer', async (data) => {
   try {
-    createPC();
+    await createPC();
     console.log('viewer: received offer');
     await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    socket.emit('answer', { sdp: pc.localDescription });
+  // send answer targeted to the offering admin
+  socket.emit('answer', { to: data.from, sdp: pc.localDescription });
   } catch (err) { console.error('handle offer error', err); }
 });
 
 socket.on('ice-candidate', async (data) => {
+  // server forwards ice-candidate with { from }
+  const from = data && data.from;
   if (!pc) {
     console.log('viewer: buffering ice candidate until pc is ready');
-    pendingIce.push(data.candidate);
+    pendingIce.push({ candidate: data.candidate, from });
     return;
   }
 
@@ -86,3 +99,8 @@ if (fsBtn) {
     } catch (e) { console.warn('fullscreen failed', e); }
   });
 }
+
+// ensure we close pc on page unload so server notifies admins quickly
+window.addEventListener('beforeunload', () => {
+  try { if (pc) pc.close(); } catch (e) { /* ignore */ }
+});
