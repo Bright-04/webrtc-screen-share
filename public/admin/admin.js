@@ -1,6 +1,7 @@
 // signaling server: use ?signal=<url> to override (e.g. ?signal=https://abcd1234.ngrok.io)
 const _signalParam = new URLSearchParams(window.location.search).get('signal');
-const _defaultSignal = `${location.protocol}//${location.hostname}:5000`;
+// default to same origin (so when viewer+signaling are exposed via one host/ngrok, clients connect there)
+const _defaultSignal = `${location.protocol}//${location.host}`;
 const _signalUrl = _signalParam || _defaultSignal;
 console.info('admin signaling url:', _signalUrl);
 const socket = io(_signalUrl);

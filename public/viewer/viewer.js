@@ -1,6 +1,7 @@
 // signaling server: use ?signal=<url> to override (e.g. ?signal=https://abcd1234.ngrok.io)
 const _signalParam = new URLSearchParams(window.location.search).get('signal');
-const _defaultSignal = `${location.protocol}//${location.hostname}:5000`;
+// default to same origin (so when viewer+signaling are exposed via one host/ngrok, clients connect there)
+const _defaultSignal = `${location.protocol}//${location.host}`;
 const _signalUrl = _signalParam || _defaultSignal;
 console.info('viewer signaling url:', _signalUrl);
 const socket = io(_signalUrl);
@@ -10,6 +11,10 @@ const fsBtn = document.getElementById('fsBtn');
 
 let pc = null;
 let pendingIce = [];
+// remote admin id (set when an offer arrives)
+let remoteAdminId = null;
+// local ICE candidates generated before we know admin id
+let localPendingIce = [];
 const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 async function createPC() {
@@ -17,8 +22,12 @@ async function createPC() {
 
   pc.onicecandidate = (e) => {
     if (e.candidate) {
-      // can't know admin id here; server will broadcast viewer's ice from viewer to admin(s) when answering
-      socket.emit('ice-candidate', { candidate: e.candidate });
+      if (remoteAdminId) {
+        socket.emit('ice-candidate', { to: remoteAdminId, candidate: e.candidate });
+      } else {
+        // buffer until we know who the admin is
+        localPendingIce.push(e.candidate);
+      }
     }
   };
 
@@ -69,11 +78,21 @@ socket.on('offer', async (data) => {
   try {
     await createPC();
     console.log('viewer: received offer');
+    // remember offering admin id so we can target our ICE candidates
+    remoteAdminId = data && data.from;
     await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
   // send answer targeted to the offering admin
   socket.emit('answer', { to: data.from, sdp: pc.localDescription });
+
+  // flush any locally buffered ICE candidates, targeting the admin
+  if (localPendingIce.length) {
+    for (const c of localPendingIce) {
+      try { socket.emit('ice-candidate', { to: remoteAdminId, candidate: c }); } catch (e) { console.warn('failed to send buffered local ICE', e); }
+    }
+    localPendingIce = [];
+  }
   } catch (err) { console.error('handle offer error', err); }
 });
 

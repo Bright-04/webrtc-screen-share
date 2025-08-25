@@ -1,39 +1,65 @@
 # webrtc-screen-share
-Minimal WebRTC + Express app for browser-based screen sharing.
+Minimal browser-based screen-sharing demo using WebRTC, Express and socket.io for signaling.
 
-## Features
+This repo provides two frontends plus a signaling server:
+- Admin (sharer) UI: serves on http://localhost:3000
+- Viewer UI + signaling (socket.io): serves on http://localhost:4000
 
-- Admin (sharer) app served on http://localhost:3000
-- Viewer app served on http://localhost:4000
-- Single signaling server (socket.io) on http://localhost:5000
-- Single signaling server (socket.io) on http://localhost:5000 (configurable for tunneling)
+By default the viewer server also hosts the signaling socket — this lets you expose a single port (4000) via a tunnel like ngrok so remote users can open one URL and join the stream.
 
-## Setup
-
+Quick start (local)
 1. Install dependencies
 
 	npm install
 
-2. Run the server (this starts admin, viewer, and signaling servers)
+2. Run the app
 
-	node server.js
+	npm run dev
 
-## Usage
+3. Admin (sharer): open the admin UI and start sharing
 
-1. Open http://localhost:3000 in the browser (admin) and click "Share Screen".
-2. Open http://localhost:4000 in another tab or browser (viewer) to see the shared screen.
+	http://localhost:3000
 
-## Using ngrok (tunnel for remote viewers)
+4. Viewer: open the viewer UI
 
-Two approaches work:
+	http://localhost:4000
 
-- Expose the signaling server (recommended): run `ngrok http 5000` and use the returned ngrok URL as the signaling URL in both admin and viewer pages. For example: `https://abc123.ngrok.io` then open `http://localhost:3000/?signal=https://abc123.ngrok.io` and `http://localhost:4000/?signal=https://abc123.ngrok.io`.
+By default clients connect their signaling socket to the page origin. The admin UI accepts an optional `?signal=` query parameter so you can point the admin's signaling socket at a tunneled viewer host (see ngrok below).
 
-- Expose only the viewer page: run `ngrok http 4000` and send the viewer ngrok URL to remote users, but you must also expose the signaling server (5000) or provide the signaling ngrok URL via the `?signal=` query parameter when opening the viewer page remotely. Example (viewer only exposed): `https://xyz456.ngrok.io/?signal=https://abc123.ngrok.io` where `https://abc123.ngrok.io` is an ngrok URL for your signaling server.
+Using ngrok (single-tunnel viewer + signaling)
+1. Start the server locally (step 2 above).
+2. Expose the viewer server (which now includes signaling) via ngrok:
 
-Notes:
-- For simple local testing you can omit `?signal` and clients will default to `http(s)://<host>:5000`.
-- For production or public testing across NATs you will likely need a TURN server (not included in this demo).
+```powershell
+ngrok http 4000
+```
+
+3. ngrok will print a public URL, e.g. `https://abcd1234.ngrok.io`. Give remote viewers that URL (they should open it directly):
+
+```
+https://abcd1234.ngrok.io
+```
+
+4. On your admin machine (local), open the admin UI and set the signaling endpoint to the ngrok host so offers/answers are routed through the same signaling server:
+
+```
+http://localhost:3000/?signal=https://abcd1234.ngrok.io
+```
+
+5. Click "Share Screen" on the admin page. Remote viewers who opened the ngrok URL should receive the stream.
+
+Notes and troubleshooting
+- If a remote viewer can't see the stream, open DevTools on the viewer and check the Console for the logged `viewer signaling url:` value and for socket.io connection errors.
+- On the admin side use the `?signal=` param so the admin connects to the same signaling endpoint as viewers.
+- If ICE is not completing (hangs), your network likely needs TURN. Add a TURN server to the `iceServers` configuration in both client files.
+- The demo uses a public STUN server only. TURN is required for many NAT/firewall setups.
+- Autoplay: the viewer video element is muted to allow autoplay in most browsers.
+
+Security and production
+- This demo is for local testing and learning. Do not expose this unprotected signaling endpoint to the public in production.
+- Add auth, rate limiting and a proper TURN server before using in the real world.
+
+If you want, I can add a small debug panel showing socket IDs and recent signaling messages in the admin/viewer UI.
 
 ## License
 
