@@ -1,15 +1,34 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin - Share Screen</title>
+    <title>Admin — Share Screen</title>
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <h1>Admin (Sharer)</h1>
-    <button id="shareBtn">Share Screen</button>
-    <h3>Local preview</h3>
-    <video id="localVid" autoplay playsinline muted style="width:80%;max-width:800px;border:1px solid #ccc"></video>
+    <header class="topbar">
+      <div class="brand">webrtc-screen-share — Admin</div>
+      <div class="status">Status: <span id="pcState">idle</span></div>
+    </header>
+
+    <main class="container">
+      <section class="card controls">
+        <div class="controls-row">
+          <button id="shareBtn" class="btn primary">Share Screen</button>
+          <div class="hint">Click to share your screen. A preview appears below.</div>
+        </div>
+      </section>
+
+      <section class="card preview">
+        <h3>Local preview</h3>
+        <div class="video-wrap">
+          <video id="localVid" autoplay playsinline muted></video>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">Open the Viewer at <a href="http://localhost:4000">http://localhost:4000</a></footer>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/admin.js"></script>

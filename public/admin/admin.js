@@ -2,6 +2,7 @@ const socket = io('http://localhost:5000');
 
 const shareBtn = document.getElementById('shareBtn');
 const localVid = document.getElementById('localVid');
+const pcStateEl = document.getElementById('pcState');
 
 let pc = null;
 let localStream = null;
@@ -19,11 +20,13 @@ function createPC() {
   pc.onconnectionstatechange = () => {
     console.log('admin pc connectionState', pc.connectionState);
     socket.emit('client-log', { role: 'admin', msg: `pc connectionState ${pc.connectionState}` });
+  if (pcStateEl) pcStateEl.textContent = pc.connectionState;
   };
 
   pc.oniceconnectionstatechange = () => {
     console.log('admin pc iceConnectionState', pc.iceConnectionState);
     socket.emit('client-log', { role: 'admin', msg: `pc iceConnectionState ${pc.iceConnectionState}` });
+  if (pcStateEl) pcStateEl.textContent = pc.iceConnectionState;
   };
 
   pc.onnegotiationneeded = () => {
@@ -63,6 +66,7 @@ socket.on('answer', async (data) => {
   if (!pc) return;
   try {
     await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+  socket.emit('client-log', { role: 'admin', msg: 'setRemoteDescription(answer)' });
   } catch (err) { console.error(err); }
 });
 
