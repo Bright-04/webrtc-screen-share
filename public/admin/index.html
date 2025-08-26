@@ -1,36 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin — Share Screen</title>
-    <link rel="stylesheet" href="styles.css">
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">webrtc-screen-share — Admin</div>
-      <div class="status">Status: <span id="pcState">idle</span></div>
-    </header>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Admin — Share Screen</title>
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+	<body>
+		<header class="topbar">
+			<div class="brand">webrtc-screen-share — Admin</div>
+			<div class="status">Status: <span id="pcState">idle</span></div>
+		</header>
 
-    <main class="container">
-      <section class="card controls">
-        <div class="controls-row">
-          <button id="shareBtn" class="btn primary">Share Screen</button>
-          <div class="hint">Click to share your screen. A preview appears below.</div>
-        </div>
-      </section>
+		<main class="container">
+			<section class="card controls">
+				<div class="controls-row">
+					<button id="shareBtn" class="btn primary">Share Screen</button>
+					<div class="hint">Click to share your screen. A preview appears below.</div>
+				</div>
+			</section>
 
-      <section class="card preview">
-        <h3>Local preview</h3>
-        <div class="video-wrap">
-          <video id="localVid" autoplay playsinline muted></video>
-        </div>
-      </section>
-    </main>
+			<section class="card preview">
+				<h3>Local preview</h3>
+				<div class="video-wrap">
+					<video id="localVid" autoplay playsinline muted></video>
+				</div>
+			</section>
+		</main>
 
-    <footer class="footer">Open the Viewer at <a href="http://localhost:4000">http://localhost:4000</a></footer>
+		<footer class="footer">Open the Viewer at <a href="http://localhost:4000">http://localhost:4000</a></footer>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/admin.js"></script>
-  </body>
+		<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+		<script src="/admin/admin.js"></script>
+	</body>
 </html>
